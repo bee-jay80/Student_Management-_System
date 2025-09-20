@@ -1,4 +1,6 @@
 asgiref==3.8.1
+certifi==2025.8.3
+cloudinary==1.44.1
 Django==5.1.7
 django-cors-headers==4.7.0
 django-jazzmin==3.0.1
@@ -8,5 +10,7 @@ mysqlclient==2.2.7
 pillow==11.1.0
 PyJWT==2.9.0
 python-dotenv==1.0.1
+six==1.17.0
 sqlparse==0.5.3
 tzdata==2025.1
+urllib3==2.5.0

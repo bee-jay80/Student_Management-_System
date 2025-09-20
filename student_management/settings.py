@@ -43,9 +43,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
+
     'students',
     'grade',
+
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'rest_framework_simplejwt',
     'cloudinary'
@@ -57,16 +60,13 @@ from datetime import timedelta
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "AUTH_HEADER_TYPES": ("Bearer",),
-    "AUTH_COOKIE": "access_token",  # Custom cookie name
-    "AUTH_COOKIE_SECURE": True,     # Set to True in production (HTTPS)
-    "AUTH_COOKIE_HTTP_ONLY": True,  # Prevent JS access to the cookie
-    "AUTH_COOKIE_SAMESITE": "Lax",  # Protect against CSRF
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": False,
+    "ALGORITHM": "HS256",
 }
 
 import cloudinary
-import cloudinary.uploader
-import cloudinary.api
 # configure Cloudinary
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
@@ -134,13 +134,13 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-        'rest_framework.authentication.SessionAuthentication',
+        "member.authentication.CookieJWTAuthentication",
     ),
     # 'DEFAULT_PERMISSION_CLASSES': (
     #     'rest_framework.permissions.IsAuthenticated',  # Change to AllowAny in development
     # ),
 }
+
 
 
 # DATABASES = {

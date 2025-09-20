@@ -1,15 +1,16 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from django.core.mail import send_mail
 from .models import Student, Courses, ProfileImage
-from .serializers import StudentRegisterSerializer, ChangePasswordSerializer, courseSerializer, ProfileImageSerializer
+from .serializers import StudentRegisterSerializer, ChangePasswordSerializer, courseSerializer, ProfileImageSerializer, LoginSerializer, StudentSerializer
 from .utils import generate_unique_password
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.contrib.auth import update_session_auth_hash
 from django.template.loader import render_to_string
-
+# Import RefreshToken 
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
@@ -70,29 +71,62 @@ class StudentViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         instance.delete()
         return Response({"status": "success", "message": "Member deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-    
 
-class CustomTokenObtainPairView(TokenObtainPairView):
-    def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        tokens = response.data
+class LoginViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = LoginSerializer
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
 
-        # Set the access token in a secure, HTTP-only cookie
-        response.set_cookie(
-            key='access_token',
-            value=tokens['access'],
-            httponly=True,
-            secure=True,  # Use HTTPS in production
-            samesite='Lax'
-        )
-        response.set_cookie(
-            key='refresh_token',
-            value=tokens['refresh'],
-            httponly=True,
-            secure=True,
-            samesite='Lax'
-        )
+            response = Response({
+                'status': 'success',
+                'student': StudentSerializer(user).data,
+            }, status=status.HTTP_200_OK)
+
+
+            response.set_cookie(
+                key = 'access_token',
+                value = access_token,
+                httponly = True,
+                secure = False,  # Use HTTPS in production
+                samesite = 'Lax',
+                max_age=300  # 5 minutes
+            )
+
+            response.set_cookie(
+                key = 'refresh_token',
+                value = refresh_token,
+                httponly = True,
+                secure = False,  # Use HTTPS in production
+                samesite = 'Lax',
+                max_age=86400  # 1 day
+            )
+
+            return response
+        return Response({'status': 'error', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+           
+
+class LogoutView(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        refresh_token = request.COOKIES.get('refresh_token')
+        if refresh_token:
+            try:
+                refresh = RefreshToken(refresh_token)
+                refresh.blacklist()  # Blacklist the token
+            except Exception as e:
+                return Response({"error": "Invalid token" + str(e)}, status=status.HTTP_400_BAD_REQUEST)    
+        response = Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
         return response
+
 
 
 class CustomTokenRefreshView(TokenRefreshView):

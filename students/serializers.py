@@ -1,8 +1,15 @@
 from rest_framework import serializers
 from .models import Student, Courses, ProfileImage
-from .utils import generate_unique_password
 from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate
 
+
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = "__all__"
+        
 
 
 class StudentRegisterSerializer(serializers.ModelSerializer):
@@ -12,7 +19,42 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
         model = Student
         fields = ['id', 'email', 'first_name', 'last_name', 'middle_name', 'city', 'state', 'country_name', 'primary_phone','password']
 
-class courseSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+
+        Student.set_password(self, password)
+        student = Student.objects.create_user(
+            email=validated_data['email'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            middle_name=validated_data.get('middle_name', ''),
+            city=validated_data.get('city', ''),
+            state=validated_data.get('state', ''),
+            country_name=validated_data.get('country_name', ''),
+            primary_phone=validated_data.get('primary_phone', ''),
+        )
+        student.set_password(password)
+        student.save()
+        return student
+
+class LoginSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(max_length=255, required=True)
+    password = serializers.CharField(max_length=128, write_only=True, required=True)
+
+    def validate(self, data):
+        email = data.get('email')
+        password = data.get('password')
+
+        if email and password:
+            user = authenticate(email=email, password=password)
+            if user and user.is_active:
+                data['user'] = user
+                return data
+            else:
+                raise serializers.ValidationError("Invalid email or password.")
+
+
+class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Courses
         fields = '__all__'
