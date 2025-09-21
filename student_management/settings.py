@@ -93,7 +93,13 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://student-dashboard-web-app.lovable.app",
+]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://student-dashboard-web-app.lovable.app",
+]
 ROOT_URLCONF = 'student_management.urls'
 
 TEMPLATES = [
@@ -198,7 +204,9 @@ DEFAULT_FROM_EMAIL = "NICE ASSOCIATION"
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
 
 # media
 MEDIA_URL = '/media/'

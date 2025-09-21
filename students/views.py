@@ -75,8 +75,8 @@ class LoginViewSet(viewsets.ViewSet):
                 key = 'access_token',
                 value = access_token,
                 httponly = True,
-                secure = False,  # Use HTTPS in production
-                samesite = 'Lax',
+                secure = True,  # Use HTTPS in production
+                samesite = 'None',
                 max_age=300  # 5 minutes
             )
 
@@ -84,8 +84,8 @@ class LoginViewSet(viewsets.ViewSet):
                 key = 'refresh_token',
                 value = refresh_token,
                 httponly = True,
-                secure = False,  # Use HTTPS in production
-                samesite = 'Lax',
+                secure = True,  # Use HTTPS in production
+                samesite = 'None',
                 max_age=86400  # 1 day
             )
 
