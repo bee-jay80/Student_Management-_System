@@ -61,37 +61,8 @@ class Student(AbstractBaseUser, PermissionsMixin):
 
 class ProfileImage(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name="profile_image")
-    image = CloudinaryField("image", default="default_profile.png")
-    image_url = models.URLField(max_length=255, blank=True, null=True)
+    image_url = models.URLField(max_length=500, blank=True, null=True)
 
-    def save(self, *args, **kwargs):
-        # Check if the instance already exists in the database
-        if self.pk:
-            # Retrieve the existing instance to check for changes
-            existing_instance = ProfileImage.objects.get(pk=self.pk)
-            # If the image has been updated, delete the old image from Cloudinary
-            if existing_instance.image != self.image and existing_instance.image.public_id != "default_profile.png":
-                uploader.destroy(existing_instance.image.public_id)
-
-        # Save the model instance to ensure the image is uploaded to Cloudinary
-        super().save(*args, **kwargs)
-
-        # If an image is uploaded, retrieve its URL from Cloudinary
-        if self.image:
-            # Use Cloudinary's API to get the secure URL of the uploaded image
-            cloudinary_image = CloudinaryImage(self.image.public_id)
-            self.image_url = cloudinary_image.build_url(secure=True)
-
-            # Save the updated model instance with the image URL
-            super().save(*args, **kwargs)
-
-    def delete(self, *args, **kwargs):
-        # Delete the image from Cloudinary if it is not the default image
-        if self.image and self.image.public_id != "default_profile.png":
-            uploader.destroy(self.image.public_id)
-
-        # Call the parent delete method to remove the instance from the database
-        super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"{self.student.first_name} {self.student.last_name} Profile Image"

@@ -12,6 +12,9 @@ from django.template.loader import render_to_string
 # Import RefreshToken 
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from rest_framework.parsers import MultiPartParser, FormParser
+import cloudinary.uploader
+
 class StudentRegisterViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     serializer_class = StudentRegisterSerializer
@@ -202,38 +205,64 @@ class ProfileImageViewSet(viewsets.ModelViewSet):
     queryset = ProfileImage.objects.all()
     serializer_class = ProfileImageSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def create(self, request, *args, **kwargs):
-        data = request.data.copy()
-        serializer = self.get_serializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
+       data = request.data.copy()
+       student_id = data.get('student')
+       image_file = request.FILES.get('image')
+
+       if not student_id or not image_file:
+              return Response({"status": "error", "errors": "Student ID and image file are required."}, status=status.HTTP_400_BAD_REQUEST)
+       
+       # Upload image to Cloudinary
+       try:
+            upload_result = cloudinary.uploader.upload(image_file, folder="profile_images/")
+            image_url = upload_result.get('secure_url')
+            # save in database
+            profile = ProfileImage.objects.create(student_id=student_id, image_url=image_url)
+            serializer = self.get_serializer(profile)
             return Response({"status": "success", "data": serializer.data}, status=status.HTTP_201_CREATED)
-        return Response({"status": "error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-    
+       except Exception as e:
+            return Response({"status": "error", "errors": f"Image upload failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+       
+       
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
     
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=False)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
-        return Response({"status": "error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-    
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        profile = self.get_object()
+        image_file = request.FILES.get("image")
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
-        return Response({"status": "error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-    
+        if image_file:
+            # Optional: delete old image from Cloudinary before uploading new
+            if profile.image_url:
+                public_id = profile.image_url.split("/")[-1].split(".")[0]  # extract public_id
+                cloudinary.uploader.destroy(public_id)
+
+            upload_result = cloudinary.uploader.upload(image_file)
+            profile.image = image_file
+            profile.image_url = upload_result.get("secure_url")
+            profile.save()
+
+        serializer = self.get_serializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.delete()
-        return Response({"status": "success", "message": "Profile image deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        profile = self.get_object()
+
+        # Delete from Cloudinary if exists
+        if profile.image_url:
+            try:
+                public_id = profile.image_url.split("/")[-1].split(".")[0]
+                cloudinary.uploader.destroy(public_id)
+            except Exception as e:
+                return Response({"error": f"Failed to delete Cloudinary image: {str(e)}"},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        profile.delete()
+        return Response({"message": "Profile and image deleted successfully"},
+                        status=status.HTTP_204_NO_CONTENT)

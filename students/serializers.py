@@ -89,4 +89,4 @@ class ResetPasswordSerializer(serializers.Serializer):
 class ProfileImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProfileImage
-        fields = ['id','student','image','image_url']
+        fields = ["id", "student", "image_url"]

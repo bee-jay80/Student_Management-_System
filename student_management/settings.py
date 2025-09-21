@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'rest_framework_simplejwt',
-    'cloudinary'
+    'cloudinary',
 ]
 
 
@@ -66,14 +66,17 @@ SIMPLE_JWT = {
     "ALGORITHM": "HS256",
 }
 
-import cloudinary
 # configure Cloudinary
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
     api_key=os.getenv("CLOUDINARY_API_KEY"),
     api_secret=os.getenv("CLOUDINARY_API_SECRET"),
     secure=True
 )
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -88,9 +91,8 @@ MIDDLEWARE = [
 ]
 
 
-CORS_ALLOWED_ORIGINS = [
-    "https://frontend-site.com",
-]
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'student_management.urls'
 
