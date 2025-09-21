@@ -9,11 +9,11 @@ class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         fields = "__all__"
-        
+
 
 
 class StudentRegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(max_length=128, read_only=True, required=False)
+    password = serializers.CharField(max_length=128, required=False)
 
     class Meta:
         model = Student
@@ -37,9 +37,10 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
         student.save()
         return student
 
-class LoginSerializer(serializers.ModelSerializer):
+class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255, required=True)
     password = serializers.CharField(max_length=128, write_only=True, required=True)
+
 
     def validate(self, data):
         email = data.get('email')

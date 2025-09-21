@@ -3,14 +3,13 @@ from django.conf import settings
 from datetime import datetime, timedelta
 from django.core.mail import send_mail
 from .models import Student
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets
 from django.template.loader import render_to_string
 from .serializers import ForgotPasswordSerializer,ResetPasswordSerializer
 
 
-class ForgotPasswordView(APIView):
+class ForgotPasswordViewSet(viewsets.ViewSet):
     serializer_class = ForgotPasswordSerializer
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
@@ -52,7 +51,7 @@ class ForgotPasswordView(APIView):
 
 
 
-class ResetPasswordView(APIView):
+class ResetPasswordViewSet(viewsets.ViewSet):
     serializer_class = ResetPasswordSerializer
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)

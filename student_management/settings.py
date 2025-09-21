@@ -134,7 +134,7 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "member.authentication.CookieJWTAuthentication",
+        "students.authentication.CookieJWTAuthentication",
     ),
     # 'DEFAULT_PERMISSION_CLASSES': (
     #     'rest_framework.permissions.IsAuthenticated',  # Change to AllowAny in development

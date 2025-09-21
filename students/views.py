@@ -2,7 +2,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from django.core.mail import send_mail
 from .models import Student, Courses, ProfileImage
-from .serializers import StudentRegisterSerializer, ChangePasswordSerializer, courseSerializer, ProfileImageSerializer, LoginSerializer, StudentSerializer
+from .serializers import StudentRegisterSerializer, ChangePasswordSerializer, CourseSerializer, ProfileImageSerializer, LoginSerializer, StudentSerializer
 from .utils import generate_unique_password
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.permissions import IsAuthenticated
@@ -12,38 +12,15 @@ from django.template.loader import render_to_string
 # Import RefreshToken 
 from rest_framework_simplejwt.tokens import RefreshToken
 
+class StudentRegisterViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = StudentRegisterSerializer
+    queryset = Student.objects.all()
+
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
-    serializer_class = StudentRegisterSerializer
-
-    def create(self, request, *args, **kwargs):
-        unique_password = generate_unique_password()
-        data = request.data.copy()
-
-        serializer = self.get_serializer(data=data)
-        if serializer.is_valid():
-            student = serializer.save()
-            student.set_password(unique_password)
-            student.save()
-
-            subject = "Your Account Details"
-            message = render_to_string('account_details_email.html', {
-                'first_name': student.first_name,
-                'email': student.email,
-                'password': unique_password,
-            })
-
-            send_mail(
-                subject,
-                message,
-                "admin@example.com",
-                [student.email],
-                fail_silently=False,
-                html_message=message,
-            )
-
-            return Response({"status": "success", "data": serializer.data}, status=status.HTTP_201_CREATED)
-        return Response({"status": "error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    serializer_class = StudentSerializer
+    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -61,16 +38,18 @@ class StudentViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
+
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
         return Response({"status": "error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
-
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.delete()
-        return Response({"status": "success", "message": "Member deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"status": "success", "message": "Student deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
 
 class LoginViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
@@ -78,7 +57,7 @@ class LoginViewSet(viewsets.ViewSet):
     def create(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            user = serializer.validated_data
+            user = serializer.validated_data['user']
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
@@ -111,10 +90,10 @@ class LoginViewSet(viewsets.ViewSet):
         return Response({'status': 'error', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
            
 
-class LogoutView(viewsets.ViewSet):
+class LogoutViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def create(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
         if refresh_token:
             try:
@@ -145,17 +124,15 @@ class CustomTokenRefreshView(TokenRefreshView):
         return response
 
 
-class ProtectedStudentView(APIView):
+class ProtectedStudentViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        print(request.COOKIES)  # Debug: Check if tokens are present
-        print(request.headers)  # Debug: Check for Authorization header
-        user = request.user
-        return Response({"message": f"Hello, {user.first_name} {user.last_name}. This is protected data."})
+    def list(self, request):
+        student = request.user
+        serializer = StudentSerializer(student)
+        return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
 
-
-class ChangePasswordView(APIView):
+class ChangePasswordViewSet(viewsets.ViewSet):
     serializer_class = ChangePasswordSerializer
     permission_classes = [IsAuthenticated]
 
@@ -182,7 +159,7 @@ class ChangePasswordView(APIView):
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Courses.objects.all()
-    serializer_class = courseSerializer
+    serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
