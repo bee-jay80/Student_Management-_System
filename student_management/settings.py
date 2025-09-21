@@ -99,6 +99,7 @@ CORS_ALLOWED_ORIGINS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "https://student-dashboard-web-app.lovable.app",
+    "https://student-management-system-1-ur04.onrender.com",
 ]
 ROOT_URLCONF = 'student_management.urls'
 

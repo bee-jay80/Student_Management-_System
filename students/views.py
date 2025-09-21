@@ -77,7 +77,8 @@ class LoginViewSet(viewsets.ViewSet):
                 httponly = True,
                 secure = True,  # Use HTTPS in production
                 samesite = 'None',
-                max_age=300  # 5 minutes
+                max_age=300,  # 5 minutes
+                domain='student-management-system-1-ur04.onrender.com'
             )
 
             response.set_cookie(
@@ -86,7 +87,8 @@ class LoginViewSet(viewsets.ViewSet):
                 httponly = True,
                 secure = True,  # Use HTTPS in production
                 samesite = 'None',
-                max_age=86400  # 1 day
+                max_age=86400,  # 1 day
+                domain='student-management-system-1-ur04.onrender.com'
             )
 
             return response
