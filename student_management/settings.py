@@ -95,6 +95,7 @@ MIDDLEWARE = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "https://student-dashboard-web-app.lovable.app",
+    "https://student-management-system-1-ur04.onrender.com",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
