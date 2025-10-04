@@ -11,6 +11,7 @@
         .payload, .response { background: #f4f4f4; padding: 1em; border-radius: 6px; margin-bottom: 1em; }
         .method { font-weight: bold; color: #2980b9; }
         .section { margin-bottom: 2em; }
+        ul { margin-top: 0.2em; }
     </style>
 </head>
 <body>
@@ -23,9 +24,9 @@
         <h2>API Overview</h2>
         <ul>
             <li>Base URL: <code>/api/</code></li>
-            <li>Authentication: JWT (Bearer token)</li>
+            <li>Authentication: JWT (Bearer token in header or <code>access_token</code> cookie)</li>
             <li>Image Hosting: Cloudinary</li>
-            <li>Database: MySQL or SQLite</li>
+            <li>Database: PostgreSQL, MySQL, or SQLite</li>
         </ul>
     </div>
 
@@ -54,14 +55,20 @@
                 <pre>{
   "id": 1,
   "email": "student@example.com",
-  ...
+  "first_name": "John",
+  "last_name": "Doe",
+  "middle_name": "A",
+  "city": "Lagos",
+  "state": "Lagos",
+  "country_name": "Nigeria",
+  "primary_phone": "08012345678"
 }</pre>
             </div>
         </div>
 
         <div class="endpoint">
             <span class="method">POST</span> <code>/api/login/</code>
-            <p>Authenticate and receive JWT tokens.</p>
+            <p>Authenticate and receive an access token in the response payload. The refresh token is set as an HTTP-only cookie.</p>
             <div class="payload">
                 <strong>Payload:</strong>
                 <pre>{
@@ -73,14 +80,23 @@
                 <strong>Response:</strong>
                 <pre>{
   "status": "success",
-  "student": { ...student fields... }
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "student": {
+    "id": 1,
+    "email": "student@example.com",
+    "first_name": "John",
+    "last_name": "Doe",
+    ...
+  }
 }</pre>
+                <strong>Set-Cookie:</strong>
+                <pre>refresh_token=<refresh_token>; HttpOnly; Secure; SameSite=None; Path=/</pre>
             </div>
         </div>
 
         <div class="endpoint">
             <span class="method">POST</span> <code>/api/logout/</code>
-            <p>Logout and blacklist the refresh token.</p>
+            <p>Logout and blacklist the refresh token. Requires authentication.</p>
             <div class="response">
                 <strong>Response:</strong>
                 <pre>{ "message": "Logged out successfully" }</pre>
@@ -137,15 +153,40 @@
         <h2>Student Endpoints</h2>
         <div class="endpoint">
             <span class="method">GET</span> <code>/api/student/</code>
-            <p>List all students.</p>
+            <p>List all students. <strong>Requires authentication.</strong></p>
+            <div class="response">
+                <strong>Response:</strong>
+                <pre>{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "email": "student@example.com",
+      ...
+    },
+    ...
+  ]
+}</pre>
+            </div>
         </div>
         <div class="endpoint">
             <span class="method">GET</span> <code>/api/student/{id}/</code>
-            <p>Retrieve a student by ID.</p>
+            <p>Retrieve a student by ID. <strong>Requires authentication.</strong></p>
+            <div class="response">
+                <strong>Response:</strong>
+                <pre>{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "email": "student@example.com",
+    ...
+  }
+}</pre>
+            </div>
         </div>
         <div class="endpoint">
             <span class="method">PUT</span> <code>/api/student/{id}/</code>
-            <p>Update a student.</p>
+            <p>Update a student. <strong>Requires authentication.</strong></p>
             <div class="payload">
                 <strong>Payload:</strong>
                 <pre>{
@@ -154,10 +195,38 @@
   ...
 }</pre>
             </div>
+            <div class="response">
+                <strong>Response:</strong>
+                <pre>{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "first_name": "Jane",
+    ...
+  }
+}</pre>
+            </div>
+        </div>
+        <div class="endpoint">
+            <span class="method">PATCH</span> <code>/api/student/{id}/</code>
+            <p>Partially update a student. <strong>Requires authentication.</strong></p>
+            <div class="payload">
+                <strong>Payload:</strong>
+                <pre>{
+  "first_name": "Jane"
+}</pre>
+            </div>
         </div>
         <div class="endpoint">
             <span class="method">DELETE</span> <code>/api/student/{id}/</code>
-            <p>Delete a student.</p>
+            <p>Delete a student. <strong>Requires authentication.</strong></p>
+            <div class="response">
+                <strong>Response:</strong>
+                <pre>{
+  "status": "success",
+  "message": "Student deleted successfully"
+}</pre>
+            </div>
         </div>
     </div>
 
@@ -165,11 +234,25 @@
         <h2>Course Endpoints</h2>
         <div class="endpoint">
             <span class="method">GET</span> <code>/api/course/</code>
-            <p>List all courses.</p>
+            <p>List all courses. <strong>Requires authentication.</strong></p>
+            <div class="response">
+                <strong>Response:</strong>
+                <pre>{
+  "status": "success",
+  "data": [
+    {
+      "course_id": 1,
+      "course_name": "Python",
+      ...
+    },
+    ...
+  ]
+}</pre>
+            </div>
         </div>
         <div class="endpoint">
             <span class="method">POST</span> <code>/api/course/</code>
-            <p>Create a new course.</p>
+            <p>Create a new course. <strong>Requires authentication.</strong></p>
             <div class="payload">
                 <strong>Payload:</strong>
                 <pre>{
@@ -181,18 +264,51 @@
   "number_of_months": 3
 }</pre>
             </div>
+            <div class="response">
+                <strong>Response:</strong>
+                <pre>{
+  "status": "success",
+  "data": {
+    "course_id": 1,
+    "course_name": "Python",
+    ...
+  }
+}</pre>
+            </div>
         </div>
         <div class="endpoint">
             <span class="method">GET</span> <code>/api/course/{id}/</code>
-            <p>Retrieve a course by ID.</p>
+            <p>Retrieve a course by ID. <strong>Requires authentication.</strong></p>
+            <div class="response">
+                <strong>Response:</strong>
+                <pre>{
+  "status": "success",
+  "data": {
+    "course_id": 1,
+    "course_name": "Python",
+    ...
+  }
+}</pre>
+            </div>
         </div>
         <div class="endpoint">
             <span class="method">PUT</span> <code>/api/course/{id}/</code>
-            <p>Update a course.</p>
+            <p>Update a course. <strong>Requires authentication.</strong></p>
+        </div>
+        <div class="endpoint">
+            <span class="method">PATCH</span> <code>/api/course/{id}/</code>
+            <p>Partially update a course. <strong>Requires authentication.</strong></p>
         </div>
         <div class="endpoint">
             <span class="method">DELETE</span> <code>/api/course/{id}/</code>
-            <p>Delete a course.</p>
+            <p>Delete a course. <strong>Requires authentication.</strong></p>
+            <div class="response">
+                <strong>Response:</strong>
+                <pre>{
+  "status": "success",
+  "message": "Course deleted successfully"
+}</pre>
+            </div>
         </div>
     </div>
 
@@ -200,7 +316,7 @@
         <h2>Profile Image Endpoints</h2>
         <div class="endpoint">
             <span class="method">POST</span> <code>/api/profile-image/</code>
-            <p>Upload a profile image for a student.</p>
+            <p>Upload a profile image for a student. <strong>Requires authentication.</strong></p>
             <div class="payload">
                 <strong>Payload (multipart/form-data):</strong>
                 <ul>
@@ -221,19 +337,46 @@
             </div>
         </div>
         <div class="endpoint">
+            <span class="method">GET</span> <code>/api/profile-image/{id}/</code>
+            <p>Retrieve a profile image by ID. <strong>Requires authentication.</strong></p>
+            <div class="response">
+                <strong>Response:</strong>
+                <pre>{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "student": 1,
+    "image_url": "https://res.cloudinary.com/your_cloud/image/upload/v1234567890/profile_images/abc123.jpg"
+  }
+}</pre>
+            </div>
+        </div>
+        <div class="endpoint">
             <span class="method">PUT</span> <code>/api/profile-image/{id}/</code>
-            <p>Update profile image.</p>
+            <p>Update profile image. <strong>Requires authentication.</strong></p>
+            <div class="payload">
+                <strong>Payload (multipart/form-data):</strong>
+                <ul>
+                    <li><code>image</code>: New image file</li>
+                </ul>
+            </div>
         </div>
         <div class="endpoint">
             <span class="method">DELETE</span> <code>/api/profile-image/{id}/</code>
-            <p>Delete profile image (removes from Cloudinary).</p>
+            <p>Delete profile image (removes from Cloudinary). <strong>Requires authentication.</strong></p>
+            <div class="response">
+                <strong>Response:</strong>
+                <pre>{
+  "message": "Profile and image deleted successfully"
+}</pre>
+            </div>
         </div>
     </div>
 
     <div class="section">
         <h2>Security & Error Handling</h2>
         <ul>
-            <li>All protected endpoints require JWT authentication via <code>Authorization: Bearer &lt;token&gt;</code> header.</li>
+            <li>All protected endpoints require JWT authentication via <code>Authorization: Bearer &lt;access_token&gt;</code> header or <code>access_token</code> cookie.</li>
             <li>Passwords are securely hashed.</li>
             <li>Profile images are stored and managed via Cloudinary.</li>
             <li>Common errors: missing fields, authentication failure, image upload failure, integrity errors.</li>

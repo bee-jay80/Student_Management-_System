@@ -32,7 +32,7 @@ class JWTHeaderAndCookieAuthentication(BaseAuthentication):
 
         # --- 2️⃣ If no access token at all ---
         if not access_token:
-            raise exceptions.AuthenticationFailed("No access token found in header.")
+            return None  # Allow unauthenticated access for endpoints that permit it
 
         try:
             # --- 3️⃣ Try validating access token ---
