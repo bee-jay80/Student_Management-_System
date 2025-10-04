@@ -72,8 +72,9 @@ class LoginViewSet(viewsets.ViewSet):
 
             refresh = RefreshToken.for_user(user)
             response = Response({
-                "access": str(refresh.access_token),
-                "user": StudentSerializer(user, context={"request": request}).data
+                'status': 'success',
+                "access_token": str(refresh.access_token),
+                "student": StudentSerializer(user).data,
             }, status=status.HTTP_200_OK)
 
             # Set refresh token in HTTP-only cookie
