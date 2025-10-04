@@ -5,12 +5,14 @@ from .models import Student, Courses, ProfileImage
 from .serializers import StudentRegisterSerializer, ChangePasswordSerializer, CourseSerializer, ProfileImageSerializer, LoginSerializer, StudentSerializer
 from .utils import generate_unique_password
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from django.contrib.auth import update_session_auth_hash
 from django.template.loader import render_to_string
-# Import RefreshToken 
+# Import RefreshToken
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from django.contrib.auth import login, logout
 
 from rest_framework.parsers import MultiPartParser, FormParser
 import cloudinary.uploader
@@ -55,45 +57,40 @@ class StudentViewSet(viewsets.ModelViewSet):
 
 
 class LoginViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+
     def create(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            refresh_token = str(refresh)
 
+            # If you don’t need Django session auth, you can remove this
+            login(request, user)
+
+            refresh = RefreshToken.for_user(user)
             response = Response({
-                'status': 'success',
-                'student': StudentSerializer(user).data,
+                "access": str(refresh.access_token),
+                "user": StudentSerializer(user, context={"request": request}).data
             }, status=status.HTTP_200_OK)
 
-
+            # Set refresh token in HTTP-only cookie
             response.set_cookie(
-                key = 'access_token',
-                value = access_token,
-                httponly = True,
-                secure = True,  # Use HTTPS in production
-                samesite = 'None',
-                max_age=300,  # 5 minutes
-                domain='student-management-system-1-ur04.onrender.com'
-            )
-
-            response.set_cookie(
-                key = 'refresh_token',
-                value = refresh_token,
-                httponly = True,
-                secure = True,  # Use HTTPS in production
-                samesite = 'None',
-                max_age=86400,  # 1 day
-                domain='student-management-system-1-ur04.onrender.com'
+                key="refresh_token",
+                value=str(refresh),
+                httponly=True,
+                samesite="Lax",
+                secure=False,
+                path="/",
+                max_age=7 * 24 * 60 * 60  # 7 days
             )
 
             return response
-        return Response({'status': 'error', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-           
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LogoutViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
